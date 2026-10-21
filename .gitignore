@@ -1,3 +1,3 @@
-.venv/  #The trailing / makes it mean “the folder named .venv
+.venv/
 .__pycache__/
 .env
