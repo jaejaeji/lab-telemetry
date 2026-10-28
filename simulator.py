@@ -3,6 +3,7 @@ import random
 import json
 import time
 import sys
+import argparse
 
 ROOM_TEMP_MIN = 20.0
 ROOM_TEMP_MAX = 25.0
@@ -14,10 +15,6 @@ ERROR_CODES = {
     201: "gripper collision",
     301: "over temperature",
 }
-
-NUM_DEVICES = 5
-INTERVAL_S = 2
-SEED = 42
 
 
 
@@ -69,23 +66,12 @@ class Device:
         if self.temperature_c >= 80:
             self.status = "failed"
             self.error_code = 301
-            # print(f"Device temperature_c: {round(self.temperature_c, 2)}")
 
         if self.status == "operating":
             if self.run_progress >= 100:
                 self.status = "complete"
 
 
-    # def check_failed(self):
-    #     if self.status == "failed":
-    #         print(f"ERROR {self.error_code}: {ERROR_CODES.get(self.error_code)}")
-    #         print(f"Current progress: {self.run_progress}")
-    #         return True
-    #     elif self.status == "complete":
-    #         print(f"Run complete. Progress: {self.run_progress}%")
-    #         return True
-
-    #     return False
 
     def run_device(self):
         self.step()
@@ -108,8 +94,17 @@ def make_devices(n):
     return device_list
 
 def main():
-    random.seed(SEED)
-    devices = make_devices(NUM_DEVICES)
+
+    parser = argparse.ArgumentParser(description="Stream simulated lab device readings as JSON")
+    parser.add_argument("--devices", type=int, default=5, help="number of devices")
+    parser.add_argument("--interval", type=float, default=2, help="loop interval in seconds")
+    parser.add_argument("--seed", type=int, default=42, help="seed number for randomized values")
+    args = parser.parse_args()
+
+
+
+    random.seed(args.seed)
+    devices = make_devices(args.devices)
     try:
         count = 0
         while True:    
@@ -119,7 +114,7 @@ def main():
             for d in devices:
                 d.run_device()
 
-            time.sleep(INTERVAL_S)
+            time.sleep(args.interval)
     except KeyboardInterrupt:
         print("Stopped.", file=sys.stderr)
 
@@ -127,11 +122,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-
-# d1 = Device("LR-01")
-
-# for _ in range (30):
-#     if d1.check_failed():
-#         break
-#     d1.run_device()
