@@ -1,5 +1,8 @@
 from datetime import datetime, timezone
 import random
+import json
+import time
+import sys
 
 ROOM_TEMP_MIN = 20.0
 ROOM_TEMP_MAX = 25.0
@@ -11,6 +14,11 @@ ERROR_CODES = {
     201: "gripper collision",
     301: "over temperature",
 }
+
+NUM_DEVICES = 5
+INTERVAL_S = 2
+SEED = 42
+
 
 
 class Device:
@@ -61,28 +69,27 @@ class Device:
         if self.temperature_c >= 80:
             self.status = "failed"
             self.error_code = 301
-            print(f"Device temperature_c: {round(self.temperature_c, 2)}")
+            # print(f"Device temperature_c: {round(self.temperature_c, 2)}")
 
         if self.status == "operating":
             if self.run_progress >= 100:
                 self.status = "complete"
 
 
-    def check_failed(self):
-        if self.status == "failed":
-            print(f"ERROR {self.error_code}: {ERROR_CODES.get(self.error_code)}")
-            print(f"Current progress: {self.run_progress}")
-            return True
-        elif self.status == "complete":
-            print(f"Run complete. Progress: {self.run_progress}%")
-            return True
+    # def check_failed(self):
+    #     if self.status == "failed":
+    #         print(f"ERROR {self.error_code}: {ERROR_CODES.get(self.error_code)}")
+    #         print(f"Current progress: {self.run_progress}")
+    #         return True
+    #     elif self.status == "complete":
+    #         print(f"Run complete. Progress: {self.run_progress}%")
+    #         return True
 
-        return False
+    #     return False
 
     def run_device(self):
         self.step()
-        print(self.reading())
-
+        print(json.dumps(self.reading()))
 
     def reset(self):
         self.status = "idle"
@@ -91,22 +98,40 @@ class Device:
         self.error_code = None
 
 
-        
-random.seed(42)
-
-d1 = Device("LR-01")
-d2 = Device("LR-02")
-
-for _ in range (30):
-    if d1.check_failed():
-        break
-    d1.run_device()
-
-for _ in range (30):
-    if d2.check_failed():
-        break
-    d2.run_device()
 
 
-    
-print(d1.status, d2.status)
+def make_devices(n):
+    device_list = []
+
+    for i in range(1, n + 1):
+        device_list.append(Device(f"LR-{i:02d}"))
+    return device_list
+
+def main():
+    random.seed(SEED)
+    devices = make_devices(NUM_DEVICES)
+    try:
+        count = 0
+        while True:    
+            count += 1
+            print(f"Step {count}", file=sys.stderr)
+
+            for d in devices:
+                d.run_device()
+
+            time.sleep(INTERVAL_S)
+    except KeyboardInterrupt:
+        print("Stopped.", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+# d1 = Device("LR-01")
+
+# for _ in range (30):
+#     if d1.check_failed():
+#         break
+#     d1.run_device()
